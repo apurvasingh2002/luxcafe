@@ -7,6 +7,7 @@ package com.test1.luxcafe;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JButton;
 import javax.swing.table.DefaultTableModel;
 
 /**
@@ -20,6 +21,14 @@ public class ReportDetailsForm extends javax.swing.JFrame {
      */
     public ReportDetailsForm() {
         initComponents();
+        checkOutButton.setVisible(false);
+        setLocationRelativeTo(null);
+    }
+
+    public ReportDetailsForm(ReportPanel rp) {
+        initComponents();
+        reportPanel = rp;
+        checkOutButton.setVisible(false);
         setLocationRelativeTo(null);
     }
 
@@ -46,8 +55,14 @@ public class ReportDetailsForm extends javax.swing.JFrame {
         customerLabel = new javax.swing.JLabel();
         waiterLabel = new javax.swing.JLabel();
         tableLabel = new javax.swing.JLabel();
+        checkOutButton = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosed(java.awt.event.WindowEvent evt) {
+                formWindowClosed(evt);
+            }
+        });
 
         jLabel1.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         jLabel1.setText("Order Details");
@@ -111,6 +126,14 @@ public class ReportDetailsForm extends javax.swing.JFrame {
         tableLabel.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
         tableLabel.setText("Table : ");
 
+        checkOutButton.setFont(new java.awt.Font("Helvetica Neue", 0, 14)); // NOI18N
+        checkOutButton.setText("Check Out");
+        checkOutButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                checkOutButtonMouseClicked(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -133,7 +156,9 @@ public class ReportDetailsForm extends javax.swing.JFrame {
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(paymentTypeLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 160, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addGroup(layout.createSequentialGroup()
-                                .addComponent(customerLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 225, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(customerLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 225, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(checkOutButton))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                     .addComponent(tableLabel, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -166,10 +191,15 @@ public class ReportDetailsForm extends javax.swing.JFrame {
                     .addComponent(customerLabel)
                     .addComponent(orderTypeLabel))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(receviedLabel)
-                    .addComponent(tableLabel))
-                .addGap(19, 19, 19)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(receviedLabel)
+                            .addComponent(tableLabel))
+                        .addGap(19, 19, 19))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addComponent(checkOutButton)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)))
                 .addComponent(jScrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 210, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
@@ -177,7 +207,28 @@ public class ReportDetailsForm extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    public void setData(String billId, String amount, String discount, String recevied, String orderType, String paymentType, String date) {
+    private void checkOutButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_checkOutButtonMouseClicked
+        JButton btn = (JButton) evt.getSource();
+        if (btn.isEnabled()) {
+            CheckoutForm checkoutForm = new CheckoutForm(btn, splitString(amountLabel.getText(), "Total : "),
+                    Integer.parseInt(splitString(billIdLabel.getText(), "Bill ID : ")));
+            checkoutForm.removeCreditPaymentType();
+            checkoutForm.setVisible(true);
+        }
+    }//GEN-LAST:event_checkOutButtonMouseClicked
+
+    private void formWindowClosed(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosed
+        if (!checkOutButton.isEnabled()) {
+            reportPanel.reloadCreditReport();
+        }
+    }//GEN-LAST:event_formWindowClosed
+
+    private String splitString(String string, String pattern) {
+        return string.split(pattern)[1];
+    }
+
+    public void setData(String billId, int orderId, String amount, String discount, String recevied,
+            String orderType, String paymentType, String date, String waiterName, String customerName, String tableName) {
         billIdLabel.setText(billIdLabel.getText() + " " + billId);
         amountLabel.setText(amountLabel.getText() + " " + amount);
         discountLabel.setText(discountLabel.getText() + " " + discount);
@@ -185,39 +236,31 @@ public class ReportDetailsForm extends javax.swing.JFrame {
         orderTypeLabel.setText(orderTypeLabel.getText() + " " + orderType);
         paymentTypeLabel.setText(paymentTypeLabel.getText() + " " + paymentType);
         dateLabel.setText(dateLabel.getText() + " " + date);
-        String waiterName = "Order By : ";
-        String customerName = "Customer : ";
-        String table = "Table : ";
+        waiterLabel.setText("Order By : " + waiterName);
+        customerLabel.setText("Customer : " + customerName);
+        tableLabel.setText("Table : " + tableName);
 
-        String statement = "SELECT c.first_name AS cfn,o.id as orderId,c.last_name AS cln,s.first_name AS sfn,s.last_name AS sln,t.name AS tName "
-                + "FROM `payment` p JOIN `order` o ON o.`id` = p.`order_id` JOIN customer c ON c.id = p.`customer_id` JOIN  "
-                + "staff s ON o.`staff_id` = s.`id` JOIN `table` t ON o.`table_id`=t.`id` WHERE p.`id` =" + Integer.valueOf(billId);
         DBConnect connect = new DBConnect();
-        connect.prepareStatement(statement, false);
+        connect.prepareStatement("SELECT od.quantity as quantity,od.price as price,m.name as `name` FROM "
+                + "order_details od join menu m on m.id=od.`menu_id` where od.`order_id`=" + orderId, false);
+        int i = 1;
+        DefaultTableModel dtm = (DefaultTableModel) jTable.getModel();
+        dtm.setRowCount(0);
         try {
-            if (connect.resultSet.next()) {
-                waiterName += connect.resultSet.getString("cfn") + " " + connect.resultSet.getString("cln");
-                customerName += connect.resultSet.getString("sfn") + " " + connect.resultSet.getString("sln");
-                table += connect.resultSet.getString("tName");
-                waiterLabel.setText(waiterName);
-                customerLabel.setText(customerName);
-                tableLabel.setText(table);
-                int orderId = connect.resultSet.getInt("orderId");
-                connect.prepareStatement("SELECT od.quantity as quantity,od.price as price,m.name as `name` FROM "
-                        + "order_details od join menu m on m.id=od.`menu_id` where od.`order_id`=" + orderId, false);
-                int i = 1;
-                DefaultTableModel dtm = (DefaultTableModel) jTable.getModel();
-                dtm.setRowCount(0);
-                while (connect.resultSet.next()) {
-                    String name = connect.resultSet.getString("name");
-                    int quantity = connect.resultSet.getInt("quantity");
-                    int price = connect.resultSet.getInt("price");
-                    dtm.addRow(new Object[]{i, name, quantity, price});
-                }
+            while (connect.resultSet.next()) {
+                String name = connect.resultSet.getString("name");
+                int quantity = connect.resultSet.getInt("quantity");
+                int price = connect.resultSet.getInt("price");
+                dtm.addRow(new Object[]{i, name, quantity, price});
             }
+
         } catch (SQLException ex) {
             Logger.getLogger(ReportDetailsForm.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+
+    public void enableCheckoutButton() {
+        checkOutButton.setVisible(true);
     }
 
     /**
@@ -258,9 +301,12 @@ public class ReportDetailsForm extends javax.swing.JFrame {
         });
     }
 
+    ReportPanel reportPanel;
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel amountLabel;
     private javax.swing.JLabel billIdLabel;
+    private javax.swing.JButton checkOutButton;
     private javax.swing.JLabel customerLabel;
     private javax.swing.JLabel dateLabel;
     private javax.swing.JLabel discountLabel;

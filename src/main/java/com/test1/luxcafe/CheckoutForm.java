@@ -28,8 +28,10 @@ public class CheckoutForm extends javax.swing.JFrame {
 
     public CheckoutForm(JButton btn, String total, int billId) {
         parentButton = btn;
-        billForm = (BillForm) SwingUtilities.getWindowAncestor(btn);
-        billForm.setEnabled(false);
+        if (SwingUtilities.getWindowAncestor(btn) instanceof BillForm billForm1) {
+            billForm = billForm1;
+            billForm.setEnabled(false);
+        }
         this.billId = billId;
         initComponents();
         billAmountTextField.setText(total);
@@ -388,17 +390,17 @@ public class CheckoutForm extends javax.swing.JFrame {
     }//GEN-LAST:event_paymentTypeComboBoxItemStateChanged
 
     private int getCustomerIDFromDB(int billId) {
-        int customerId = 0;
+        int cId = 0;
         DBConnect connect = new DBConnect();
         connect.prepareStatement("select customer_id from payment where id=" + billId, false);
         try {
             if (connect.resultSet.next()) {
-                customerId = connect.resultSet.getInt("customer_id");
+                cId = connect.resultSet.getInt("customer_id");
             }
         } catch (SQLException ex) {
             Logger.getLogger(CheckoutForm.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return customerId;
+        return cId;
     }
 
     private void setChange() {
@@ -424,17 +426,24 @@ public class CheckoutForm extends javax.swing.JFrame {
             connect.insertStatement("update payment set discount=" + discount + ",recevied_amount="
                     + netAmount + ",payment_type='" + paymentType + "',status='Completed' where id=" + billId, false);
         }
-        if (parentButton != null) {
-            parentButton.setEnabled(false);
+        if (billForm != null) {
             billForm.createCompletedBillPanel();
             billForm.toFront();
             billForm.setEnabled(true);
-            dispose();
+           
+        }
+        if (parentButton != null) {
+            parentButton.setEnabled(false);
+             dispose();
         }
     }
 
     public void updateCreditor() {
         updatePaymentTable((int) list[0], (int) list[1], (String) list[2]);
+    }
+
+    public void removeCreditPaymentType() {
+        paymentTypeComboBox.removeItem("Credit");
     }
 
     /**
@@ -454,16 +463,18 @@ public class CheckoutForm extends javax.swing.JFrame {
                 }
             }
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(CheckoutForm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(ReportDetailsForm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(CheckoutForm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(ReportDetailsForm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(CheckoutForm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(ReportDetailsForm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(CheckoutForm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(ReportDetailsForm.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
-
+        //</editor-fold>
+        //</editor-fold>
+        //</editor-fold>
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {

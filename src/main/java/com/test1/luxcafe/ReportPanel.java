@@ -20,6 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JViewport;
 import javax.swing.table.DefaultTableModel;
@@ -97,6 +98,12 @@ public class ReportPanel extends javax.swing.JPanel {
         jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 18)); // NOI18N
         jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel1.setText("Report");
+
+        jTabbedPane1.addChangeListener(new javax.swing.event.ChangeListener() {
+            public void stateChanged(javax.swing.event.ChangeEvent evt) {
+                jTabbedPane1StateChanged(evt);
+            }
+        });
 
         dsrComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Select", "Dine In", "Delivery", "Take Away" }));
 
@@ -631,9 +638,13 @@ public class ReportPanel extends javax.swing.JPanel {
                 String orderType = (String) dsrTable.getValueAt(selectedRowIndex, 5);
                 String paymentType = (String) dsrTable.getValueAt(selectedRowIndex, 6);
                 String date = LocalDate.now().toString();
+                int orderId = getOrderIdFromDB(Integer.parseInt(billId));
+                String waiterName = getStaffNameFromDB(orderId);
+                String customerName = getCustomerNameFromDB(orderId);
+                String tableName = getTableNameFromDB(orderId);
                 ReportDetailsForm rdf = new ReportDetailsForm();
                 rdf.setTitle("Daily Sales Report Details");
-                rdf.setData(billId, amount, discount, recevied, orderType, paymentType, date);
+                rdf.setData(billId, orderId, amount, discount, recevied, orderType, paymentType, date, waiterName, customerName, tableName);
                 rdf.setVisible(true);
             }
         }
@@ -651,9 +662,13 @@ public class ReportPanel extends javax.swing.JPanel {
                 String orderType = getOrderTypefromDB(getOrderIdFromDB(Integer.parseInt(billId)));
                 String paymentType = (String) salesTable.getValueAt(selectedRowIndex, 6);
                 String date = (String) salesTable.getValueAt(selectedRowIndex, 5);
+                int orderId = getOrderIdFromDB(Integer.parseInt(billId));
+                String waiterName = getStaffNameFromDB(orderId);
+                String customerName = getCustomerNameFromDB(orderId);
+                String tableName = getTableNameFromDB(orderId);
                 ReportDetailsForm rdf = new ReportDetailsForm();
                 rdf.setTitle("Sales Report Details");
-                rdf.setData(billId, amount, discount, recevied, orderType, paymentType, date);
+                rdf.setData(billId, orderId, amount, discount, recevied, orderType, paymentType, date, waiterName, customerName, tableName);
                 rdf.setVisible(true);
             }
         }
@@ -663,12 +678,14 @@ public class ReportPanel extends javax.swing.JPanel {
         if (evt.getClickCount() == 2 && !evt.isConsumed()) {
             evt.consume();
             if (creditGetButton.isEnabled()) {
+                System.out.println("::inside creditGetButton.isEnabled()::");
                 int selectedRowIndex = creditTable.getSelectedRow();
                 if (creditTable.getRowCount() - 2 > selectedRowIndex) {
+                    System.out.println("inside creditTable.getRowCount() - 2 > selectedRowIndex");
                     String firstName = (String) creditTable.getValueAt(selectedRowIndex, 1);
                     String lastName = (String) creditTable.getValueAt(selectedRowIndex, 2);
                     String mobile = (String) creditTable.getValueAt(selectedRowIndex, 3);
-                    tempTableModel = (DefaultTableModel) creditTable.getModel();
+
                     creditTable.removeAll();
                     creditTable.setModel(salesTable.getModel());
                     DefaultTableModel dtm = (DefaultTableModel) creditTable.getModel();
@@ -680,17 +697,24 @@ public class ReportPanel extends javax.swing.JPanel {
                 }
             } else {
                 int selectedRowIndex = creditTable.getSelectedRow();
+                System.out.println(">>>>>");
                 if (creditTable.getRowCount() - 4 > selectedRowIndex) {
+                    System.out.println("::::::::::::");
                     String billId = String.valueOf(creditTable.getValueAt(selectedRowIndex, 1));
                     String amount = String.valueOf(creditTable.getValueAt(selectedRowIndex, 2));
                     String discount = String.valueOf(creditTable.getValueAt(selectedRowIndex, 3));
                     String recevied = String.valueOf(creditTable.getValueAt(selectedRowIndex, 4));
-                    String orderType = getOrderTypefromDB(getOrderIdFromDB(Integer.parseInt(billId)));
-                    String paymentType = (String) creditTable.getValueAt(selectedRowIndex, 6);
+                    String orderType = (String) creditTable.getValueAt(selectedRowIndex, 6);
+                    String paymentType = "Credit";
                     String date = (String) creditTable.getValueAt(selectedRowIndex, 5);
-                    ReportDetailsForm rdf = new ReportDetailsForm();
+                    int orderId = getOrderIdFromDB(Integer.parseInt(billId));
+                    String waiterName = getStaffNameFromDB(orderId);
+                    String customerName = getCustomerNameFromDB(orderId);
+                    String tableName = getTableNameFromDB(orderId);
+                    ReportDetailsForm rdf = new ReportDetailsForm((ReportPanel) jTabbedPane1.getParent());
                     rdf.setTitle("Credit Report Details");
-                    rdf.setData(billId, amount, discount, recevied, orderType, paymentType, date);
+                    rdf.setData(billId, orderId, amount, discount, recevied, orderType, paymentType, date, waiterName, customerName, tableName);
+                    rdf.enableCheckoutButton();
                     rdf.setVisible(true);
                 }
             }
@@ -699,7 +723,7 @@ public class ReportPanel extends javax.swing.JPanel {
 
     private void setSecondCreditTable(int customerId) {
         DBConnect connect = new DBConnect();
-        connect.prepareStatement("select * from payment where customer_id=" + customerId, false);
+        connect.prepareStatement("select * from payment where payment_type='Credit' and customer_id=" + customerId, false);
         try {
             int sno = 1;
             DefaultTableModel dtm = (DefaultTableModel) creditTable.getModel();
@@ -731,11 +755,7 @@ public class ReportPanel extends javax.swing.JPanel {
 
     private void creditBackButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_creditBackButtonMouseClicked
         if (creditBackButton.isEnabled()) {
-            creditTable.removeAll();
-            creditTable.setModel(tempTableModel);
             setCreditReport();
-            creditBackButton.setEnabled(false);
-            creditGetButton.setEnabled(true);
         }
     }//GEN-LAST:event_creditBackButtonMouseClicked
 
@@ -758,6 +778,21 @@ public class ReportPanel extends javax.swing.JPanel {
 //        printComponenet(panel);
     }//GEN-LAST:event_printButtonMouseClicked
 
+    private void jTabbedPane1StateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_jTabbedPane1StateChanged
+        JTabbedPane tabbedPane = (JTabbedPane) evt.getSource();
+        switch (tabbedPane.getTitleAt(tabbedPane.getSelectedIndex())) {
+            case "DSR" -> {
+                setDsrReport();
+            }
+            case "Sales" -> {
+                setSalesReport();
+            }
+            case "Credit" -> {
+                setCreditReport();
+            }
+        }
+    }//GEN-LAST:event_jTabbedPane1StateChanged
+
     private void setDsrReport() {
         getDsrReportData("select * from payment where status = 'Completed' and payment_date >= CURRENT_DATE");
     }
@@ -772,6 +807,36 @@ public class ReportPanel extends javax.swing.JPanel {
     }
 
     private void setCreditReport() {
+        creditBackButton.setEnabled(false);
+        creditGetButton.setEnabled(true);
+        creditTable.removeAll();
+        creditTable.setModel(new javax.swing.table.DefaultTableModel(
+                new Object[][]{},
+                new String[]{
+                    "S.No.", "First Name", "Last Name", "Mobile", "Amount"
+                }
+        ) {
+            Class[] types = new Class[]{
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
+            };
+            boolean[] canEdit = new boolean[]{
+                false, false, false, false, false
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types[columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit[columnIndex];
+            }
+        });
+        creditTable.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
+        creditTable.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                creditTableMouseClicked(evt);
+            }
+        });
         getCreditReportData("SELECT c.*,SUM(p.amount) AS amount FROM customer c JOIN "
                 + "payment p ON p.`customer_id` = c.`id` WHERE p.`payment_type` = 'Credit' GROUP BY c.`id`");
     }
@@ -900,6 +965,50 @@ public class ReportPanel extends javax.swing.JPanel {
         return orderId;
     }
 
+    private String getTableNameFromDB(int orderId) {
+        String tableName = "";
+        DBConnect connect = new DBConnect();
+        connect.prepareStatement("select t.name from `table` t join `order` o on o.table_id = t.id where o.id=" + orderId, false);
+        try {
+            if (connect.resultSet.next()) {
+                tableName = connect.resultSet.getString("name");
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(ReportPanel.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return tableName;
+    }
+
+    private String getStaffNameFromDB(int orderId) {
+        String staffName = "";
+        DBConnect connect = new DBConnect();
+        connect.prepareStatement("select s.first_name,s.last_name from `staff` s join "
+                + "`order` o on o.staff_id = s.id where o.id=" + orderId, false);
+        try {
+            if (connect.resultSet.next()) {
+                staffName += connect.resultSet.getString("first_name") + " " + connect.resultSet.getString("last_name");
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(ReportPanel.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return staffName;
+    }
+
+    private String getCustomerNameFromDB(int orderId) {
+        String customerName = "";
+        DBConnect connect = new DBConnect();
+        connect.prepareStatement("select c.first_name,c.last_name from `customer` c "
+                + "join `order` o on o.customer_id = c.id where o.id=" + orderId, false);
+        try {
+            if (connect.resultSet.next()) {
+                customerName += connect.resultSet.getString("first_name") + " " + connect.resultSet.getString("last_name");
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(ReportPanel.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return customerName;
+    }
+
     private String getOrderTypefromDB(int orderId) {
         String text = "";
         DBConnect connect = new DBConnect();
@@ -955,7 +1064,10 @@ public class ReportPanel extends javax.swing.JPanel {
         }
     }
 
-    private DefaultTableModel tempTableModel;
+    public void reloadCreditReport() {
+        setCreditReport();
+    }
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton creditBackButton;
